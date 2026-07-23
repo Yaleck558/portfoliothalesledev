@@ -85,55 +85,53 @@ function SocialContactsList() {
 
   return (
     <div className="w-full select-none" style={{ marginTop: 96 }}>
-      <div className="overflow-x-auto">
-        <div className="flex items-center gap-3 px-2 py-2">
-          {socials.map((social) => {
-            const isHttp = social.href.startsWith('http');
+      <div className="flex flex-wrap items-center gap-3 px-2 py-2">
+        {socials.map((social) => {
+          const isHttp = social.href.startsWith('http');
 
-            return (
-              <div
-                key={social.id}
-                className="flex items-center justify-center"
-                style={itemStyle}
-              >
-                <PreviewLinkCard href={social.href}>
-                  <PreviewLinkCardTrigger
-                    target={isHttp ? '_blank' : undefined}
-                    rel={isHttp ? 'noopener noreferrer' : undefined}
-                    className="block rounded-full"
-                    style={{ textDecoration: 'none' }}
+          return (
+            <div
+              key={social.id}
+              className="flex items-center justify-center"
+              style={itemStyle}
+            >
+              <PreviewLinkCard href={social.href}>
+                <PreviewLinkCardTrigger
+                  target={isHttp ? '_blank' : undefined}
+                  rel={isHttp ? 'noopener noreferrer' : undefined}
+                  className="block rounded-full"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <motion.div
+                    className="flex items-center justify-center overflow-hidden rounded-full shadow-sm"
+                    style={{
+                      width: 34,
+                      height: 34,
+                      background: '#ffffff',
+                    }}
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
-                    <motion.div
-                      className="flex items-center justify-center overflow-hidden rounded-full shadow-sm"
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={social.icon}
+                      alt={social.label}
                       style={{
-                        width: 34,
-                        height: 34,
-                        background: '#ffffff',
+                        width: 18,
+                        height: 18,
+                        objectFit: 'contain',
                       }}
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={social.icon}
-                        alt={social.label}
-                        style={{
-                          width: 18,
-                          height: 18,
-                          objectFit: 'contain',
-                        }}
-                      />
-                    </motion.div>
-                  </PreviewLinkCardTrigger>
+                    />
+                  </motion.div>
+                </PreviewLinkCardTrigger>
 
-                  <PreviewLinkCardContent side="bottom" sideOffset={10}>
-                    <PreviewLinkCardImage alt={social.label} />
-                  </PreviewLinkCardContent>
-                </PreviewLinkCard>
-              </div>
-            );
-          })}
-        </div>
+                <PreviewLinkCardContent side="top" sideOffset={10}>
+                  <PreviewLinkCardImage alt={social.label} />
+                </PreviewLinkCardContent>
+              </PreviewLinkCard>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

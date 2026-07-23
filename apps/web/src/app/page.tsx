@@ -56,7 +56,7 @@ export default function Home() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 60px 32px;
+          padding: 60px 32px 160px;  /* padding-bottom augmenté : laisse la place au texte fantôme + trait sans chevaucher les liens sociaux */
           position: relative;
           overflow: hidden;
         }
@@ -130,7 +130,7 @@ export default function Home() {
 
         .hero-bg-name {
               position: absolute;
-              bottom: -40px;              /* était: 40px, on le fait descendre encore plus */
+              bottom: 38px;                /* descendu : laisse la marge sous les liens sociaux, texte entier visible */
               left: 50%;
               transform: translateX(-50%);
               font-family: 'Germania One', cursive;
@@ -147,9 +147,38 @@ export default function Home() {
         @media (max-width: 768px) {
             .hero-bg-name {
                   font-size: 38px;
-                  bottom: -20px;             /* était: 20px */
+                  bottom: 26px;
                 }
             }
+
+        .hero-bottom-line {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          border-radius: 999px;
+          background: #4925B0;
+          overflow: hidden;
+          z-index: 2;
+          box-shadow: 0 0 8px rgba(73, 37, 176, 0.55);
+          pointer-events: none;
+        }
+
+        .hero-bottom-line-glow {
+          position: absolute;
+          top: 0;
+          left: -30%;
+          width: 30%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, #ffffff, transparent);
+          animation: heroLineSweep 2.5s linear infinite;
+        }
+
+        @keyframes heroLineSweep {
+          0% { left: -30%; }
+          100% { left: 130%; }
+        }
 
         .hero-left {
           display: flex;
@@ -267,6 +296,10 @@ export default function Home() {
           className="hero-bg-photo"
         />
         <span className="hero-bg-name">Thalès le Dev</span>
+
+        <div className="hero-bottom-line">
+          <span className="hero-bottom-line-glow" />
+        </div>
 
         <div className="hero-content">
           <div className="hero-left">

@@ -473,8 +473,12 @@ export default function PainPoints() {
             >
               <div className="pp-reveal-bar" />
               <div className="pp-handle-chevrons">
-                <ChevronLeft size={26} animateOnHover />
-                <ChevronRight size={26} animateOnHover />
+                <AnimateIcon animateOnHover>
+                  <ChevronLeft size={26} />
+                </AnimateIcon>
+                <AnimateIcon animateOnHover>
+                  <ChevronRight size={26} />
+                </AnimateIcon>
               </div>
             </div>
 
@@ -482,12 +486,14 @@ export default function PainPoints() {
             <div className="pp-bottom-nav">
               <button
                 className={`pp-bottom-arrow ${isNavOverSolution ? 'on-dark' : 'on-light'} ${
-                  !showSolutionHint ? 'active' : ''
+                  showSolutionHint ? 'active' : ''
                 }`}
                 aria-label="Voir la solution"
                 onClick={() => setSliderPosition(0)}
               >
-                <ArrowLeft size={16} animateOnHover />
+                <AnimateIcon animateOnHover>
+                  <ArrowLeft size={16} />
+                </AnimateIcon>
               </button>
               <span className={`pp-bottom-text ${isNavOverSolution ? 'on-dark' : 'on-light'}`}>
                 {showSolutionHint
@@ -496,12 +502,14 @@ export default function PainPoints() {
               </span>
               <button
                 className={`pp-bottom-arrow ${isNavOverSolution ? 'on-dark' : 'on-light'} ${
-                  showSolutionHint ? 'active' : ''
+                  !showSolutionHint ? 'active' : ''
                 }`}
                 aria-label="Voir le problème"
                 onClick={() => setSliderPosition(100)}
               >
-                <ArrowRight size={16} animateOnHover />
+                <AnimateIcon animateOnHover>
+                  <ArrowRight size={16} />
+                </AnimateIcon>
               </button>
             </div>
           </div>
