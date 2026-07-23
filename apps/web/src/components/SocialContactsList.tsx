@@ -5,7 +5,8 @@ import {
   PreviewLinkCard,
   PreviewLinkCardTrigger,
   PreviewLinkCardContent,
-} from './animate-ui/components/radix/preview-link-card';
+  PreviewLinkCardImage,
+} from './PreviewLinkCard';
 
 // -----------------------------------------------------------------------------
 // 1. Données — tes liens réels
@@ -69,14 +70,6 @@ const socials = [
   },
 ];
 
-// -----------------------------------------------------------------------------
-// 2. Options Embla
-// -----------------------------------------------------------------------------
-const OPTIONS: EmblaOptionsType = {
-  loop: true,
-  align: 'center',
-};
-
 // Largeur fixe et petite de chaque slide -> icônes très rapprochées
 const SLIDE_WIDTH = 46;
 
@@ -106,6 +99,7 @@ function SocialContactsList() {
                 <PreviewLinkCard href={social.href}>
                   <PreviewLinkCardTrigger
                     target={isHttp ? '_blank' : undefined}
+                    rel={isHttp ? 'noopener noreferrer' : undefined}
                     className="block rounded-full"
                     style={{ textDecoration: 'none' }}
                   >
@@ -132,23 +126,8 @@ function SocialContactsList() {
                     </motion.div>
                   </PreviewLinkCardTrigger>
 
-                  <PreviewLinkCardContent align="center" sideOffset={10}>
-                    <div className="flex items-center gap-2 whitespace-nowrap px-3 py-2">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={social.icon}
-                        alt={social.label}
-                        className="size-6 shrink-0 object-contain"
-                      />
-                      <div className="flex flex-col leading-tight">
-                        <span className="text-xs font-semibold">
-                          {social.label}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {social.subtitle}
-                        </span>
-                      </div>
-                    </div>
+                  <PreviewLinkCardContent side="bottom" sideOffset={10}>
+                    <PreviewLinkCardImage alt={social.label} />
                   </PreviewLinkCardContent>
                 </PreviewLinkCard>
               </div>

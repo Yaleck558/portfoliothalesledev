@@ -7,12 +7,14 @@ import { supabase } from '../lib/supabase';
 import { GravityStarsBackground } from '../components/animate-ui/components/backgrounds/gravity-stars';
 import { CodeDemo } from '../components/CodeDemo';
 import { SocialContactsList } from '../components/SocialContactsList';
+import PainPoints from '../components/PainPoints';
 import {
   PreviewLinkCard,
   PreviewLinkCardTrigger,
   PreviewLinkCardContent,
   PreviewLinkCardImage,
 } from '../components/PreviewLinkCard';
+
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(false);
@@ -304,6 +306,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <PainPoints />
     </>
   );
 }
