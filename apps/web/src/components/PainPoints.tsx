@@ -3,6 +3,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
+import { AnimateIcon } from '../components/animate-ui/icons/icon';
 import { ChevronLeft } from '../components/animate-ui/icons/chevron-left';
 import { ChevronRight } from '../components/animate-ui/icons/chevron-right';
 import { ArrowLeft } from '../components/animate-ui/icons/arrow-left';
@@ -428,7 +429,9 @@ export default function PainPoints() {
                 {PROBLEMS.map((item) => (
                   <li className="pp-list-item" key={item}>
                     <span className="pp-list-icon">
-                      <X size={20} animateOnHover />
+                      <AnimateIcon animateOnHover>
+                        <X size={20} />
+                      </AnimateIcon>
                     </span>
                     {item}
                   </li>
@@ -451,7 +454,9 @@ export default function PainPoints() {
                 {SOLUTIONS.map((item) => (
                   <li className="pp-list-item" key={item}>
                     <span className="pp-list-icon">
-                      <CircleCheckBig size={20} animateOnHover />
+                      <AnimateIcon animateOnHover>
+                        <CircleCheckBig size={20} />
+                      </AnimateIcon>
                     </span>
                     {item}
                   </li>
