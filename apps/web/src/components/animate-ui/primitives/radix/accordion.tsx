@@ -1,90 +1,150 @@
+'use client';
+
 import * as React from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Accordion as AccordionPrimitive } from 'radix-ui';
+import { motion, AnimatePresence, type HTMLMotionProps } from 'motion/react';
 
-import {
-  Accordion as AccordionPrimitive,
-  AccordionItem as AccordionItemPrimitive,
-  AccordionHeader as AccordionHeaderPrimitive,
-  AccordionTrigger as AccordionTriggerPrimitive,
-  AccordionContent as AccordionContentPrimitive,
-  type AccordionProps as AccordionPrimitiveProps,
-  type AccordionItemProps as AccordionItemPrimitiveProps,
-  type AccordionTriggerProps as AccordionTriggerPrimitiveProps,
-  type AccordionContentProps as AccordionContentPrimitiveProps,
-} from '../components/animate-ui/primitives/radix/accordion';
-import { cn } from '../lib/utils';
+import { useControlledState } from '@/hooks/use-controlled-state';
+import { getStrictContext } from '@/lib/get-strict-context';
 
-type AccordionProps = AccordionPrimitiveProps;
-
-function Accordion(props: AccordionProps) {
-  return <AccordionPrimitive {...props} />;
-}
-
-type AccordionItemProps = AccordionItemPrimitiveProps;
-
-function AccordionItem({ className, ...props }: AccordionItemProps) {
-  return (
-    <AccordionItemPrimitive
-      className={cn('border-b border-[#e6def7] bg-transparent last:border-b-0', className)}
-      {...props}
-    />
-  );
-}
-
-type AccordionTriggerProps = AccordionTriggerPrimitiveProps & {
-  showArrow?: boolean;
+type AccordionContextType = {
+  value: string | string[] | undefined;
+  setValue: (value: string | string[] | undefined) => void;
 };
 
-function AccordionTrigger({
-  className,
-  children,
-  showArrow = true,
-  ...props
-}: AccordionTriggerProps) {
+type AccordionItemContextType = {
+  value: string;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+};
+
+const [AccordionProvider, useAccordion] =
+  getStrictContext<AccordionContextType>('AccordionContext');
+
+const [AccordionItemProvider, useAccordionItem] =
+  getStrictContext<AccordionItemContextType>('AccordionItemContext');
+
+type AccordionProps = React.ComponentProps<typeof AccordionPrimitive.Root>;
+
+function Accordion(props: AccordionProps) {
+  const [value, setValue] = useControlledState<string | string[] | undefined>({
+    value: props?.value,
+    defaultValue: props?.defaultValue,
+    onChange: props?.onValueChange as (
+      value: string | string[] | undefined,
+    ) => void,
+  });
+
   return (
-    <AccordionHeaderPrimitive className="flex">
-      <AccordionTriggerPrimitive
-        className={cn(
-          'group flex w-full flex-1 items-start justify-between gap-4 border-none bg-transparent p-0 py-5 text-left text-base font-semibold text-[#1c1230] transition-colors outline-none hover:text-[#4925B0] focus-visible:ring-2 focus-visible:ring-[#4925B0]/40 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:underline',
-          className,
-        )}
+    <AccordionProvider value={{ value, setValue }}>
+      <AccordionPrimitive.Root
+        data-slot="accordion"
         {...props}
-      >
-        {children}
-        {showArrow && (
-          <ChevronDown
-            className="pointer-events-none size-5 shrink-0 translate-y-0.5 text-[#4925B0] transition-transform duration-300 group-data-[state=open]:rotate-180"
-            strokeWidth={2.5}
-          />
-        )}
-      </AccordionTriggerPrimitive>
-    </AccordionHeaderPrimitive>
+        onValueChange={setValue}
+      />
+    </AccordionProvider>
   );
 }
 
-type AccordionContentProps = AccordionContentPrimitiveProps;
+type AccordionItemProps = React.ComponentProps<typeof AccordionPrimitive.Item>;
+
+function AccordionItem(props: AccordionItemProps) {
+  const { value } = useAccordion();
+  const [isOpen, setIsOpen] = React.useState(
+    value?.includes(props?.value) ?? false,
+  );
+
+  React.useEffect(() => {
+    setIsOpen(value?.includes(props?.value) ?? false);
+  }, [value, props?.value]);
+
+  return (
+    <AccordionItemProvider value={{ isOpen, setIsOpen, value: props.value }}>
+      <AccordionPrimitive.Item data-slot="accordion-item" {...props} />
+    </AccordionItemProvider>
+  );
+}
+
+type AccordionHeaderProps = React.ComponentProps<
+  typeof AccordionPrimitive.Header
+>;
+
+function AccordionHeader(props: AccordionHeaderProps) {
+  return <AccordionPrimitive.Header data-slot="accordion-header" {...props} />;
+}
+
+type AccordionTriggerProps = React.ComponentProps<
+  typeof AccordionPrimitive.Trigger
+>;
+
+function AccordionTrigger(props: AccordionTriggerProps) {
+  return (
+    <AccordionPrimitive.Trigger data-slot="accordion-trigger" {...props} />
+  );
+}
+
+type AccordionContentProps = Omit<
+  React.ComponentProps<typeof AccordionPrimitive.Content>,
+  'asChild' | 'forceMount'
+> &
+  HTMLMotionProps<'div'> & {
+    keepRendered?: boolean;
+  };
 
 function AccordionContent({
-  className,
-  children,
+  keepRendered = false,
+  transition = { duration: 0.35, ease: 'easeInOut' },
   ...props
 }: AccordionContentProps) {
+  const { isOpen } = useAccordionItem();
+
   return (
-    <AccordionContentPrimitive {...props}>
-      <div className={cn('pt-0 pb-5 text-sm leading-relaxed text-[#5b5468]', className)}>
-        {children}
-      </div>
-    </AccordionContentPrimitive>
+    <AnimatePresence>
+      {keepRendered ? (
+        <AccordionPrimitive.Content forceMount render={<motion.div key="accordion-content" data-slot="accordion-content" initial={{ height: 0, opacity: 0, '--mask-stop': '0%', y: 20 }} animate={
+                            isOpen
+                              ? { height: 'auto', opacity: 1, '--mask-stop': '100%', y: 0 }
+                              : { height: 0, opacity: 0, '--mask-stop': '0%', y: 20 }
+                          } transition={transition} style={{
+                            maskImage:
+                              'linear-gradient(black var(--mask-stop), transparent var(--mask-stop))',
+                            WebkitMaskImage:
+                              'linear-gradient(black var(--mask-stop), transparent var(--mask-stop))',
+                            overflow: 'hidden',
+                          }} {...props} />}></AccordionPrimitive.Content>
+      ) : (
+        isOpen && (
+          <AccordionPrimitive.Content forceMount render={<motion.div key="accordion-content" data-slot="accordion-content" initial={{ height: 0, opacity: 0, '--mask-stop': '0%', y: 20 }} animate={{
+                                      height: 'auto',
+                                      opacity: 1,
+                                      '--mask-stop': '100%',
+                                      y: 0,
+                                    }} exit={{ height: 0, opacity: 0, '--mask-stop': '0%', y: 20 }} transition={transition} style={{
+                                      maskImage:
+                                        'linear-gradient(black var(--mask-stop), transparent var(--mask-stop))',
+                                      WebkitMaskImage:
+                                        'linear-gradient(black var(--mask-stop), transparent var(--mask-stop))',
+                                      overflow: 'hidden',
+                                    }} {...props} />}></AccordionPrimitive.Content>
+        )
+      )}
+    </AnimatePresence>
   );
 }
 
 export {
   Accordion,
   AccordionItem,
+  AccordionHeader,
   AccordionTrigger,
   AccordionContent,
+  useAccordion,
+  useAccordionItem,
   type AccordionProps,
   type AccordionItemProps,
+  type AccordionHeaderProps,
   type AccordionTriggerProps,
   type AccordionContentProps,
+  type AccordionContextType,
+  type AccordionItemContextType,
 };
