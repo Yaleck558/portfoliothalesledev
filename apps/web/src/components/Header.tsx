@@ -517,12 +517,10 @@ export default function Header() {
                       </button>
                     </>
                   ) : (
-                    <PreviewLinkCard href="https://wa.me/2290196171313">
+                    <PreviewLinkCard href="/contact">
                       <PreviewLinkCardTrigger
                         className="btn btn-login"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Me contacter sur WhatsApp"
+                        title="Me contacter"
                       >
                         <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2v-2h-2v2z" />
@@ -530,7 +528,7 @@ export default function Header() {
                         Me contacter
                       </PreviewLinkCardTrigger>
                       <PreviewLinkCardContent side="bottom" sideOffset={10}>
-                        <PreviewLinkCardImage alt="Me contacter sur WhatsApp" />
+                        <PreviewLinkCardImage alt="Page de contact" />
                       </PreviewLinkCardContent>
                     </PreviewLinkCard>
                   )}
@@ -604,12 +602,10 @@ export default function Header() {
           )}
 
           {!loading && !user && (
-            <PreviewLinkCard href="https://wa.me/2290196171313">
+            <PreviewLinkCard href="/contact">
               <PreviewLinkCardTrigger
                 className="mobile-nav-btn"
-                title="Me contacter sur WhatsApp"
-                target="_blank"
-                rel="noopener noreferrer"
+                title="Me contacter"
               >
                 <svg className="mobile-nav-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2v-2h-2v2z" />
@@ -617,7 +613,7 @@ export default function Header() {
                 <span className="mobile-nav-label">Contact</span>
               </PreviewLinkCardTrigger>
               <PreviewLinkCardContent side="top" sideOffset={10}>
-                <PreviewLinkCardImage alt="Contact WhatsApp" />
+                <PreviewLinkCardImage alt="Page de contact" />
               </PreviewLinkCardContent>
             </PreviewLinkCard>
           )}
@@ -633,9 +629,6 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Spacers */}
-      <div className="hidden md:block h-28" />
-      <div className="md:hidden h-20" />
     </>
   );
 }

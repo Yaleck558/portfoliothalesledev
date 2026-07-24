@@ -45,14 +45,14 @@ function AccordionTrigger({
     <AccordionHeaderPrimitive className="flex">
       <AccordionTriggerPrimitive
         className={cn(
-          'focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between gap-4 rounded-md py-5 text-left text-base font-medium text-gray-900 transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180',
+          'focus-visible:ring-ring/50 flex flex-1 items-center justify-between gap-4 rounded-md py-6 text-left text-lg font-normal text-black transition-all outline-none underline-offset-4 focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 data-[state=open]:underline [&[data-state=open]>svg]:rotate-180',
           className,
         )}
         {...props}
       >
         {children}
         {showArrow && (
-          <ChevronDownIcon className="text-gray-400 pointer-events-none size-4 shrink-0 transition-transform duration-200" />
+          <ChevronDownIcon className="text-black pointer-events-none size-5 shrink-0 stroke-[1.5px] transition-transform duration-200" />
         )}
       </AccordionTriggerPrimitive>
     </AccordionHeaderPrimitive>
@@ -68,7 +68,7 @@ function AccordionContent({
 }: AccordionContentProps) {
   return (
     <AccordionContentPrimitive {...props}>
-      <div className={cn('text-sm text-gray-600 leading-relaxed pt-0 pb-5', className)}>
+      <div className={cn('text-base text-gray-600 leading-relaxed pt-0 pb-6', className)}>
         {children}
       </div>
     </AccordionContentPrimitive>

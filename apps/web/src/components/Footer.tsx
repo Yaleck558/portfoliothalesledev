@@ -22,7 +22,7 @@ export default function Footer() {
         .site-footer {
           position: relative;
           background: #E3D9FA;
-          padding-top: 1px; /* évite un collapse de marge avec la vague */
+          padding-top: 0px; /* évite un collapse de marge avec la vague */
         }
 
         .footer-wave {
@@ -176,8 +176,7 @@ export default function Footer() {
               <span className="footer-logo-text">Thalès le Dev</span>
             </div>
             <p className="footer-tagline">
-              Étudiant en développement web &amp; freelance — je conçois des
-              sites et applications sur mesure, du design au code.
+              <b>Développeur web certifié & freelance</b>  je conçois des sites et applications sur mesure, du design au code.
             </p>
           </div>
 
@@ -214,11 +213,7 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a
-                  href="https://wa.me/2290196171313"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href="/contact">
                   Me contacter
                 </a>
               </li>
@@ -227,7 +222,7 @@ export default function Footer() {
 
           <div className="footer-follow">
             <h3 className="footer-col-title">Me suivre</h3>
-            <SocialContactsList variant="dark" style={{ marginTop: 0 }} />
+            <SocialContactsList variant="white" style={{ marginTop: 0 }} />
           </div>
         </div>
 
@@ -236,7 +231,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Thalès le Dev. Tous droits réservés.
           </span>
           <span className="footer-signature">
-            Conçu &amp; développé avec Next.js
+            Conçu &amp; développé par moi-même
           </span>
         </div>
       </div>

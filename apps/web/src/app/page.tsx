@@ -9,7 +9,6 @@ import { CodeDemo } from '../components/CodeDemo';
 import { SocialContactsList } from '../components/SocialContactsList';
 import PainPoints from '../components/PainPoints';
 import FaqSection from '../components/FaqSection';
-import Footer from '../components/Footer';
 import {
   PreviewLinkCard,
   PreviewLinkCardTrigger,
@@ -343,7 +342,6 @@ export default function Home() {
       </section>
       <PainPoints />
       <FaqSection />
-      <Footer />
     </>
   );
 }
