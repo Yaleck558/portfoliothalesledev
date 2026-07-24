@@ -8,6 +8,8 @@ import { GravityStarsBackground } from '../components/animate-ui/components/back
 import { CodeDemo } from '../components/CodeDemo';
 import { SocialContactsList } from '../components/SocialContactsList';
 import PainPoints from '../components/PainPoints';
+import FaqSection from '../components/FaqSection';
+import Footer from '../components/Footer';
 import {
   PreviewLinkCard,
   PreviewLinkCardTrigger,
@@ -340,6 +342,8 @@ export default function Home() {
         </div>
       </section>
       <PainPoints />
+      <FaqSection />
+      <Footer />
     </>
   );
 }

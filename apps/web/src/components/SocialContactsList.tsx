@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { motion } from 'motion/react';
 import {
   PreviewLinkCard,
@@ -76,15 +77,30 @@ const SLIDE_WIDTH = 46;
 // -----------------------------------------------------------------------------
 // 3. Composant
 // -----------------------------------------------------------------------------
-function SocialContactsList() {
+type SocialContactsListProps = {
+  variant?: 'light' | 'dark';
+  className?: string;
+  style?: CSSProperties;
+};
+
+function SocialContactsList({
+  variant = 'light',
+  className = '',
+  style,
+}: SocialContactsListProps) {
   const itemStyle = {
     width: SLIDE_WIDTH,
     minWidth: SLIDE_WIDTH,
     maxWidth: SLIDE_WIDTH,
   } as const;
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="w-full select-none" style={{ marginTop: 96 }}>
+    <div
+      className={`w-full select-none ${className}`}
+      style={style ?? { marginTop: 96 }}
+    >
       <div className="flex flex-wrap items-center gap-3 px-2 py-2">
         {socials.map((social) => {
           const isHttp = social.href.startsWith('http');
@@ -107,7 +123,7 @@ function SocialContactsList() {
                     style={{
                       width: 34,
                       height: 34,
-                      background: '#ffffff',
+                      background: isDark ? '#4925B0' : '#ffffff',
                     }}
                     whileHover={{ scale: 1.1 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -120,6 +136,7 @@ function SocialContactsList() {
                         width: 18,
                         height: 18,
                         objectFit: 'contain',
+                        filter: isDark ? 'brightness(0) invert(1)' : undefined,
                       }}
                     />
                   </motion.div>
