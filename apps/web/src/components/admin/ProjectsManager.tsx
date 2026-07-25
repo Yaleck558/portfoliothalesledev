@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { supabase } from '../../lib/supabase';
+import { AddProjectCard } from './AddProjectCard';
 import { ProjectForm, type ProjectFormValues } from './ProjectForm';
 import { SortableProjectCard, type Project } from './SortableProjectCard';
 
@@ -52,7 +53,8 @@ export function ProjectsManager({ userId }: ProjectsManagerProps) {
   }
 
   async function handleCreate(values: ProjectFormValues) {
-    const nextOrder = projects.length > 0 ? Math.max(...projects.map((p) => p.display_order)) + 1 : 0;
+    // Place le nouveau projet juste à côté de la carte "Ajouter un projet" (en tête de liste)
+    const nextOrder = projects.length > 0 ? Math.min(...projects.map((p) => p.display_order)) - 1 : 0;
 
     const { error } = await supabase.from('projects').insert([
       {
@@ -163,62 +165,35 @@ export function ProjectsManager({ userId }: ProjectsManagerProps) {
     }
   }
 
+  const isModalOpen = showForm || !!editingProject;
+
+  function closeModal() {
+    setShowForm(false);
+    setEditingProject(null);
+  }
+
   return (
     <section>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8">
         <h2 className="admin-title text-2xl uppercase md:text-3xl">Mes Projets</h2>
-        <button
-          onClick={() => {
-            setEditingProject(null);
-            setShowForm(!showForm);
-          }}
-          className="admin-body rounded-lg bg-[#4925B0] px-6 py-2.5 font-bold text-white transition hover:bg-[#6a42d0]"
-        >
-          {showForm ? 'Annuler' : '+ Ajouter un projet'}
-        </button>
       </div>
-
-      {showForm && (
-        <ProjectForm
-          userId={userId}
-          submitLabel="Ajouter le projet"
-          onSubmit={handleCreate}
-          onCancel={() => setShowForm(false)}
-        />
-      )}
-
-      {editingProject && (
-        <ProjectForm
-          userId={userId}
-          submitLabel="Enregistrer les modifications"
-          initialValues={{
-            title: editingProject.title,
-            description: editingProject.description,
-            image_url: editingProject.image_url,
-            technologies: editingProject.technologies,
-            category: editingProject.category || '',
-            demo_url: editingProject.demo_url || '',
-            github_url: editingProject.github_url || '',
-            status: editingProject.status,
-            is_featured: editingProject.is_featured,
-          }}
-          onSubmit={(values) => handleUpdate(editingProject.id, values)}
-          onCancel={() => setEditingProject(null)}
-        />
-      )}
 
       {error && <p className="admin-body mb-4 text-red-500">{error}</p>}
 
       {loading ? (
         <p className="admin-body text-slate-500">Chargement des projets...</p>
-      ) : projects.length === 0 ? (
-        <p className="admin-body text-slate-500">Aucun projet pour l'instant — clique sur "+ Ajouter un projet" pour commencer.</p>
       ) : (
         <>
           <p className="admin-body mb-4 text-xs text-slate-400">Glisse-dépose les cartes pour changer l'ordre d'affichage public.</p>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={projects.map((p) => p.id)} strategy={rectSortingStrategy}>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <AddProjectCard
+              onClick={() => {
+                setEditingProject(null);
+                setShowForm(true);
+              }}
+            />
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={projects.map((p) => p.id)} strategy={rectSortingStrategy}>
                 {projects.map((project) => (
                   <SortableProjectCard
                     key={project.id}
@@ -232,10 +207,52 @@ export function ProjectsManager({ userId }: ProjectsManagerProps) {
                     onToggleFeatured={() => handleToggleFeatured(project)}
                   />
                 ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+              </SortableContext>
+            </DndContext>
+          </div>
         </>
+      )}
+
+      {/* Modale d'ajout / édition — formulaire multi-étapes */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={closeModal}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {showForm && (
+              <ProjectForm
+                userId={userId}
+                submitLabel="Ajouter le projet"
+                onSubmit={handleCreate}
+                onCancel={closeModal}
+              />
+            )}
+
+            {editingProject && (
+              <ProjectForm
+                userId={userId}
+                submitLabel="Enregistrer les modifications"
+                initialValues={{
+                  title: editingProject.title,
+                  description: editingProject.description,
+                  image_url: editingProject.image_url,
+                  technologies: editingProject.technologies,
+                  category: editingProject.category || '',
+                  demo_url: editingProject.demo_url || '',
+                  github_url: editingProject.github_url || '',
+                  status: editingProject.status,
+                  is_featured: editingProject.is_featured,
+                }}
+                onSubmit={(values) => handleUpdate(editingProject.id, values)}
+                onCancel={closeModal}
+              />
+            )}
+          </div>
+        </div>
       )}
     </section>
   );
