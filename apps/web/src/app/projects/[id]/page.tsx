@@ -172,7 +172,7 @@ export default function ProjectsPage() {
 
         .projects-header {
           background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
-          padding: 90px 32px 30px;
+          padding: 120px 32px 30px;
           text-align: left;
           border-bottom: 2px solid #e0e0e0;
         }

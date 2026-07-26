@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={cn("font-sans", geist.variable)}>
-      <body>
+      <body style={{ backgroundColor: 'linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%)', margin: 0, padding: 0 }}>
         <Header />
         <main>
           {children}
