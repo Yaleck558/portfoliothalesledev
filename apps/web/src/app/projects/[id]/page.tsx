@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 
 interface Project {
   id: string;
@@ -15,145 +16,142 @@ interface Project {
   github_url?: string;
   status: 'draft' | 'published';
   is_featured: boolean;
+  created_at: string;
 }
 
-const PROJECTS_PER_PAGE = 6;
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const projectId = params.id as string;
 
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [imageIndexes, setImageIndexes] = useState<{ [key: string]: number }>({});
+  const [error, setError] = useState<string | null>(null);
+  const [relatedProjects, setRelatedProjects] = useState<Project[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Récupérer les projets publiés
   useEffect(() => {
-    async function fetchProjects() {
+    async function fetchProject() {
       try {
-        const { data, error } = await supabase
+        console.log('🔍 Fetching project:', projectId);
+        
+        const { data, error: fetchError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .eq('status', 'published')
+          .single();
+
+        if (fetchError) {
+          console.error('❌ Fetch error:', fetchError);
+          setError(`Erreur: ${fetchError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        if (!data) {
+          console.error('❌ No data returned');
+          setError('Projet non trouvé');
+          setLoading(false);
+          return;
+        }
+
+        console.log('✅ Project fetched:', data.title);
+        setProject(data);
+
+        // Récupérer les projets connexes
+        const { data: related, error: relatedError } = await supabase
           .from('projects')
           .select('*')
           .eq('status', 'published')
-          .order('is_featured', { ascending: false })
-          .order('display_order', { ascending: true });
+          .neq('id', projectId)
+          .eq('category', data.category)
+          .limit(3);
 
-        if (error) throw error;
-        setProjects(data || []);
+        if (!relatedError) {
+          setRelatedProjects(related || []);
+        }
+
+        setLoading(false);
       } catch (err) {
-        console.error('Erreur fetch projets:', err);
-      } finally {
+        console.error('🔥 Catch error:', err);
+        setError(`Erreur: ${err}`);
         setLoading(false);
       }
     }
 
-    fetchProjects();
-  }, []);
-
-  // Extraire les catégories et technologies uniques
-  const categories = useMemo(() => {
-    const cats = projects
-      .map((p) => p.category)
-      .filter(Boolean) as string[];
-    return [...new Set(cats)].sort();
-  }, [projects]);
-
-  const allTechs = useMemo(() => {
-    const techs = new Set<string>();
-    projects.forEach((p) => p.technologies?.forEach((t) => techs.add(t)));
-    return Array.from(techs).sort();
-  }, [projects]);
-
-  // Filtrer les projets
-  const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
-      const matchesSearch =
-        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.technologies.some((t) =>
-          t.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-      const matchesCategory =
-        selectedCategories.length === 0 ||
-        selectedCategories.includes(project.category || '');
-
-      const matchesTechs =
-        selectedTechs.length === 0 ||
-        selectedTechs.some((tech) =>
-          project.technologies.some(
-            (t) => t.toLowerCase() === tech.toLowerCase()
-          )
-        );
-
-      return matchesSearch && matchesCategory && matchesTechs;
-    });
-  }, [projects, searchTerm, selectedCategories, selectedTechs]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
-  const startIdx = (currentPage - 1) * PROJECTS_PER_PAGE;
-  const paginatedProjects = filteredProjects.slice(
-    startIdx,
-    startIdx + PROJECTS_PER_PAGE
-  );
-
-  // Projets en vedette pour la section finale
-  const featuredProjects = projects.filter((p) => p.is_featured);
-
-  const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
-    setCurrentPage(1);
-  };
-
-  const toggleTech = (tech: string) => {
-    setSelectedTechs((prev) =>
-      prev.includes(tech) ? prev.filter((t) => t !== tech) : [...prev, tech]
-    );
-    setCurrentPage(1);
-  };
-
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedCategories([]);
-    setSelectedTechs([]);
-    setCurrentPage(1);
-  };
+    if (projectId) {
+      fetchProject();
+    }
+  }, [projectId]);
 
   // Carousel functions
   const getProjectImages = (imageUrl?: string): string[] => {
     if (!imageUrl) return [];
-    // Supporte les URLs séparées par | (pipe)
     return imageUrl.split('|').map(url => url.trim()).filter(Boolean);
   };
 
-  const goToImage = (projectId: string, index: number, totalImages: number) => {
-    const newIndex = (index + totalImages) % totalImages;
-    setImageIndexes(prev => ({ ...prev, [projectId]: newIndex }));
+  const handlePrevImage = () => {
+    const images = getProjectImages(project?.image_url);
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  const nextImage = (projectId: string, totalImages: number) => {
-    const current = imageIndexes[projectId] || 0;
-    goToImage(projectId, current + 1, totalImages);
+  const handleNextImage = () => {
+    const images = getProjectImages(project?.image_url);
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
 
-  const prevImage = (projectId: string, totalImages: number) => {
-    const current = imageIndexes[projectId] || 0;
-    goToImage(projectId, current - 1, totalImages);
+  const handleThumbnailClick = (index: number) => {
+    setCurrentImageIndex(index);
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Josefin Sans' }}>
-        <p>Chargement des projets...</p>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Josefin Sans',
+          fontSize: '18px',
+          color: '#666',
+        }}
+      >
+        Chargement du projet...
       </div>
     );
   }
+
+  // Error state
+  if (error || !project) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Josefin Sans',
+          fontSize: '18px',
+          color: '#d32f2f',
+          textAlign: 'center',
+          padding: '20px',
+        }}
+      >
+        <div>
+          <p>❌ {error || 'Projet non trouvé'}</p>
+          <Link href="/projects" style={{ color: '#4925B0', textDecoration: 'underline' }}>
+            ← Retour aux projets
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const images = getProjectImages(project.image_url);
+  const currentImage = images[currentImageIndex];
 
   return (
     <>
@@ -164,299 +162,102 @@ export default function ProjectsPage() {
 
         * { box-sizing: border-box; }
 
-        .projects-page {
+        .project-detail-hero {
           background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
-          min-height: 100vh;
-          font-family: 'Josefin Sans', sans-serif;
-        }
-
-        .projects-header {
-          background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
-          padding: 120px 32px 30px;
-          text-align: left;
+          padding: 40px 32px;
           border-bottom: 2px solid #e0e0e0;
         }
 
-        .projects-breadcrumb {
-          font-size: 16px;
+        .back-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
           color: #4925B0;
-          margin-bottom: 24px;
+          text-decoration: none;
           font-weight: 600;
+          margin-bottom: 24px;
+          transition: all 0.3s ease;
+          font-size: 16px;
         }
 
-        .projects-breadcrumb a {
+        .back-link:hover {
+          color: #6a42d0;
+          transform: translateX(-4px);
+        }
+
+        .back-link .material-icons {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .breadcrumb {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 16px;
+          color: #666;
+        }
+
+        .breadcrumb a {
           color: #4925B0;
           text-decoration: none;
           font-weight: 600;
           transition: color 0.3s ease;
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
         }
 
-        .projects-breadcrumb a .material-icons {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .projects-breadcrumb a:hover {
+        .breadcrumb a:hover {
           color: #6a42d0;
-          text-decoration: underline;
         }
 
-        .projects-header-title {
-          font-family: 'Germania One', cursive;
-          font-size: 64px;
-          color: #333;
-          margin: 0 0 4px;
-          text-transform: capitalize;
-          letter-spacing: -1px;
+        .breadcrumb-sep {
+          color: #ccc;
         }
 
-        .projects-header-subtitle {
-          font-size: 18px;
-          color: #999;
-          margin: 0;
-          font-weight: 300;
-        }
-
-        .projects-wrapper {
-          max-width: 1400px;
+        .project-detail-container {
+          max-width: 1200px;
           margin: 0 auto;
-          padding: 40px 32px;
-          display: grid;
-          grid-template-columns: 280px 1fr;
-          gap: 40px;
-        }
-
-        @media (max-width: 1024px) {
-          .projects-wrapper {
-            grid-template-columns: 1fr;
-            gap: 30px;
-            padding: 30px 20px;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .projects-wrapper {
-            grid-template-columns: 1fr;
-            gap: 24px;
-            padding: 24px 16px;
-          }
-        }
-
-        /* ===== SIDEBAR ===== */
-        .sidebar {
-          display: flex;
-          flex-direction: column;
-          gap: 32px;
-          height: fit-content;
-          position: sticky;
-          top: 20px;
-        }
-
-        @media (max-width: 1024px) {
-          .sidebar {
-            position: static;
-            top: auto;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .sidebar {
-            position: static;
-            top: auto;
-            gap: 20px;
-          }
-        }
-
-        .filter-section {
-          background: white;
-          padding: 24px;
-          border-radius: 8px;
-          border: 1px solid #e0e0e0;
-        }
-
-        @media (max-width: 768px) {
-          .filter-section {
-            padding: 18px;
-          }
-        }
-
-        .filter-title {
-          font-size: 14px;
-          font-weight: 700;
-          color: #333;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin: 0 0 16px;
-          padding-bottom: 12px;
-          border-bottom: 2px solid #e0e0e0;
-          display: inline-flex;
-          align-items: center;
-          gap: 0;
-        }
-
-        .filter-title .material-icons {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 12px 16px;
-          border: 1px solid #e0e0e0;
-          border-radius: 6px;
+          padding: 60px 32px;
           font-family: 'Josefin Sans', sans-serif;
-          font-size: 15px;
-          transition: all 0.3s ease;
         }
 
-        .search-input:focus {
-          outline: none;
-          border-color: #4925B0;
-          box-shadow: 0 0 0 3px rgba(73, 37, 176, 0.1);
-        }
-
-        .checkbox-group {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .checkbox-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          cursor: pointer;
-          user-select: none;
-        }
-
-        .checkbox-item input {
-          cursor: pointer;
-          accent-color: #4925B0;
-          width: 18px;
-          height: 18px;
-        }
-
-        .checkbox-label {
-          font-size: 15px;
-          color: #333;
-          flex: 1;
-        }
-
-        .checkbox-count {
-          font-size: 14px;
-          color: #999;
-          margin-left: auto;
-        }
-
-        .tech-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-
-        .tech-tag {
-          padding: 8px 14px;
-          background: #f0f0f0;
-          border: 1px solid #e0e0e0;
-          border-radius: 4px;
-          font-size: 13px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          color: #333;
-          font-weight: 600;
-        }
-
-        .tech-tag:hover {
-          border-color: #4925B0;
-          color: #4925B0;
-        }
-
-        .tech-tag.active {
-          background: #4925B0;
-          color: white;
-          border-color: #4925B0;
-        }
-
-        .reset-filters {
-          background: none;
-          border: 1px solid #e0e0e0;
-          padding: 12px;
-          border-radius: 6px;
-          font-size: 13px;
-          color: #4925B0;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .reset-filters:hover {
-          background: rgba(73, 37, 176, 0.05);
-          border-color: #4925B0;
-        }
-
-        /* ===== MAIN CONTENT ===== */
-        .projects-content {
-          display: flex;
-          flex-direction: column;
-          gap: 32px;
-        }
-
-        .projects-grid {
+        .project-detail-grid {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 32px;
+          grid-template-columns: 1fr 1fr;
+          gap: 60px;
+          margin-bottom: 80px;
         }
 
         @media (max-width: 1024px) {
-          .projects-grid {
+          .project-detail-grid {
             grid-template-columns: 1fr;
+            gap: 40px;
           }
         }
 
-        @media (max-width: 768px) {
-          .projects-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-          }
-        }
-
-        .project-card {
-          background: white;
-          border-radius: 8px;
-          overflow: hidden;
-          border: 1px solid #e0e0e0;
-          transition: all 0.3s ease;
+        .project-images {
           display: flex;
           flex-direction: column;
-          height: 100%;
+          gap: 16px;
         }
 
-        .project-card:hover {
-          border-color: #4925B0;
-          box-shadow: 0 8px 24px rgba(73, 37, 176, 0.1);
-        }
-
-        .project-image {
+        .project-main-image {
           width: 100%;
-          height: 280px;
+          height: 400px;
           padding: 20px;
+          border-radius: 12px;
+          overflow: hidden;
           background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
+          border: 2px solid #e0e0e0;
           position: relative;
-          box-sizing: border-box;
         }
 
-        .carousel-container {
+        .carousel-main-container {
           width: 100%;
           height: 100%;
           position: relative;
@@ -468,14 +269,14 @@ export default function ProjectsPage() {
           overflow: hidden;
         }
 
-        .carousel-image {
+        .carousel-main-image {
           width: 90%;
           height: 90%;
           object-fit: contain;
           transition: opacity 0.3s ease;
         }
 
-        .carousel-nav {
+        .carousel-nav-main {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
@@ -494,582 +295,588 @@ export default function ProjectsPage() {
           z-index: 10;
         }
 
-        .carousel-nav:hover {
+        .carousel-nav-main:hover {
           background: rgba(73, 37, 176, 0.9);
           transform: translateY(-50%) scale(1.1);
         }
 
-        .carousel-nav.prev {
+        .carousel-nav-main.prev {
           left: 12px;
         }
 
-        .carousel-nav.next {
+        .carousel-nav-main.next {
           right: 12px;
         }
 
-        .carousel-dots {
-          position: absolute;
-          bottom: 12px;
-          left: 50%;
-          transform: translateX(-50%);
-          display: flex;
-          gap: 8px;
-          z-index: 10;
+        .project-thumbnails {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+          gap: 12px;
         }
 
-        .carousel-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.5);
-          border: none;
+        .project-thumbnail {
+          width: 100%;
+          height: 80px;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #f0f0f0;
+          border: 2px solid #e0e0e0;
           cursor: pointer;
           transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .carousel-dot.active {
-          background: white;
-          width: 24px;
-          border-radius: 4px;
+        .project-thumbnail:hover {
+          border-color: #4925B0;
+          transform: scale(1.05);
         }
 
-        .project-card:hover .carousel-image {
-          filter: brightness(1.05);
+        .project-thumbnail.active {
+          border-color: #4925B0;
+          box-shadow: 0 0 0 2px rgba(73, 37, 176, 0.2);
         }
 
-        .project-image-placeholder {
+        .project-thumbnail img {
           width: 100%;
           height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #4925B0 0%, #6a42d0 100%);
-          color: white;
-          font-size: 48px;
+          object-fit: cover;
         }
 
-        .project-badge {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          background: rgba(73, 37, 176, 0.9);
-          color: white;
-          padding: 6px 12px;
-          border-radius: 4px;
-          font-size: 11px;
-          font-weight: 700;
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .project-badge .material-icons {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .project-body {
-          padding: 24px;
+        .project-info {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          flex: 1;
+          gap: 40px;
         }
 
-        .project-category {
+        .project-header {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .project-category-badge {
           display: inline-block;
           background: rgba(73, 37, 176, 0.1);
           color: #4925B0;
-          padding: 6px 12px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 700;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 600;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px;
           width: fit-content;
         }
 
-        .project-title {
-          font-size: 20px;
-          font-weight: 700;
+        .project-detail-title {
+          font-family: 'Germania One', cursive;
+          font-size: 56px;
           color: #333;
           margin: 0;
-          line-height: 1.3;
+          text-transform: capitalize;
+          letter-spacing: -1px;
+          line-height: 1.2;
         }
 
-        .project-description {
-          font-size: 15px;
-          color: #666;
+        @media (max-width: 768px) {
+          .project-detail-title {
+            font-size: 42px;
+          }
+        }
+
+        .project-detail-description {
+          font-size: 18px;
+          color: #333;
+          line-height: 1.7;
           margin: 0;
-          line-height: 1.5;
-          flex: 1;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
         }
 
-        .project-techs {
+        .project-meta {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          padding: 24px;
+          background: #f9f9f9;
+          border-radius: 12px;
+          border-left: 4px solid #4925B0;
+        }
+
+        @media (max-width: 768px) {
+          .project-meta {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .meta-item {
           display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          padding-top: 8px;
-          border-top: 1px solid #e0e0e0;
+          flex-direction: column;
+          gap: 8px;
         }
 
-        .tech-badge {
-          background: #f0f0f0;
-          color: #666;
-          padding: 6px 10px;
-          border-radius: 3px;
+        .meta-label {
           font-size: 13px;
           font-weight: 600;
+          color: #4925B0;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
-        .project-footer {
-          padding: 18px 24px;
-          border-top: 1px solid #e0e0e0;
-          background: #f9f9f9;
-        }
-
-        .btn-details {
-          width: 100%;
-          background: #4925B0;
-          color: white;
-          border: none;
-          padding: 13px;
-          border-radius: 6px;
-          font-family: 'Josefin Sans', sans-serif;
+        .meta-value {
           font-size: 15px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-decoration: none;
+          color: #333;
           display: flex;
-          align-items: center;
-          justify-content: center;
+          flex-wrap: wrap;
           gap: 8px;
         }
 
-        .btn-details .material-icons {
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .tech-badge-detail {
+          background: white;
+          color: #4925B0;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 13px;
+          font-weight: 600;
+          border: 1px solid #4925B0;
+          display: inline-block;
         }
 
-        .btn-details:hover {
-          background: #6a42d0;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(73, 37, 176, 0.3);
-        }
-
-        /* ===== PAGINATION ===== */
-        .pagination {
+        .project-links {
           display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
-          margin-top: 32px;
+          gap: 16px;
           flex-wrap: wrap;
         }
 
-        .pagination-btn {
-          padding: 10px 14px;
-          border: 1px solid #e0e0e0;
-          background: white;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
+        .btn-link {
+          flex: 1;
+          min-width: 180px;
+          padding: 14px 24px;
+          border-radius: 8px;
+          font-family: 'Josefin Sans', sans-serif;
+          font-size: 16px;
           font-weight: 600;
+          text-decoration: none;
+          border: 2px solid #4925B0;
+          cursor: pointer;
           transition: all 0.3s ease;
-          color: #333;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
         }
 
-        .pagination-btn:hover {
-          border-color: #4925B0;
+        .btn-demo {
+          background: #4925B0;
+          color: white;
+        }
+
+        .btn-demo:hover {
+          background: #6a42d0;
+          border-color: #6a42d0;
+          box-shadow: 0 8px 24px rgba(73, 37, 176, 0.3);
+          transform: translateY(-2px);
+        }
+
+        .btn-github {
+          background: transparent;
           color: #4925B0;
         }
 
-        .pagination-btn.active {
-          background: #4925B0;
-          color: white;
-          border-color: #4925B0;
+        .btn-github:hover {
+          background: rgba(73, 37, 176, 0.1);
+          transform: translateY(-2px);
         }
 
-        .pagination-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        .btn-link .material-icons {
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        /* ===== SIMILAR PROJECT SECTION ===== */
-        .similar-section {
-          margin-top: 80px;
-          padding: 60px 32px;
-          background: white;
-          border-radius: 12px;
-          border: 1px solid #e0e0e0;
-          text-align: center;
+        .about-section {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 60px;
+          padding: 60px 0;
+          border-top: 2px solid #e0e0e0;
         }
 
-        .similar-title {
+        @media (max-width: 768px) {
+          .about-section {
+            grid-template-columns: 1fr;
+            gap: 40px;
+          }
+        }
+
+        .about-title {
           font-family: 'Germania One', cursive;
           font-size: 36px;
           color: #333;
-          margin: 0 0 12px;
+          margin: 0 0 24px;
+          text-transform: capitalize;
         }
 
-        .similar-subtitle {
-          font-size: 16px;
-          color: #999;
-          margin: 0 0 32px;
+        .about-text {
+          font-size: 18px;
+          color: #333;
+          line-height: 1.7;
+          margin: 0;
         }
 
-        .similar-btn {
-          background: #4925B0;
+        .cta-section {
+          background: linear-gradient(135deg, #4925B0 0%, #6a42d0 100%);
           color: white;
+          padding: 48px 40px;
+          border-radius: 12px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          align-items: center;
+          margin: 80px 0;
+        }
+
+        .cta-title {
+          font-family: 'Germania One', cursive;
+          font-size: 32px;
+          margin: 0;
+          text-transform: capitalize;
+        }
+
+        .cta-text {
+          font-size: 18px;
+          line-height: 1.7;
+          margin: 0;
+          max-width: 500px;
+        }
+
+        .cta-button {
+          background: white;
+          color: #4925B0;
           border: none;
-          padding: 15px 36px;
-          border-radius: 6px;
+          padding: 15px 40px;
+          border-radius: 8px;
           font-family: 'Josefin Sans', sans-serif;
-          font-size: 16px;
+          font-size: 18px;
           font-weight: 700;
           cursor: pointer;
           transition: all 0.3s ease;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
+          margin-top: 8px;
         }
 
-        .similar-btn .material-icons {
+        .cta-button:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
+        }
+
+        .cta-button .material-icons {
           display: flex;
           align-items: center;
           justify-content: center;
+          font-size: 22px;
         }
 
-        .similar-btn:hover {
-          background: #6a42d0;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(73, 37, 176, 0.3);
+        .related-section {
+          padding-top: 60px;
+          border-top: 2px solid #e0e0e0;
         }
 
-        .empty-state {
-          text-align: center;
-          padding: 60px 20px;
-          background: white;
-          border-radius: 8px;
-          border: 1px dashed #e0e0e0;
-          grid-column: 1 / -1;
-        }
-
-        .empty-state-icon {
-          font-size: 48px;
-          margin-bottom: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .empty-state-title {
-          font-size: 20px;
+        .related-title {
+          font-family: 'Germania One', cursive;
+          font-size: 36px;
           color: #333;
-          margin: 0 0 8px;
-          font-weight: 700;
+          margin: 0 0 40px;
+          text-transform: capitalize;
         }
 
-        .empty-state-text {
-          color: #999;
+        .related-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 32px;
+        }
+
+        .related-card {
+          background: white;
+          border: 2px solid #e0e0e0;
+          border-radius: 12px;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          text-decoration: none;
+          color: inherit;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .related-card:hover {
+          border-color: #4925B0;
+          transform: translateY(-8px);
+          box-shadow: 0 12px 32px rgba(73, 37, 176, 0.15);
+        }
+
+        .related-image {
+          width: 100%;
+          height: 160px;
+          background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .related-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .related-content {
+          padding: 20px;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .related-name {
+          font-size: 20px;
+          font-weight: 700;
+          color: #333;
           margin: 0;
+        }
+
+        .related-desc {
           font-size: 15px;
+          color: #666;
+          margin: 0;
+          line-height: 1.4;
+          flex: 1;
+        }
+
+        .featured-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          color: #4925B0;
+          font-weight: 600;
+          margin-top: 12px;
+          font-size: 15px;
+        }
+
+        .featured-badge .material-icons {
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
       `}</style>
 
-      <div className="projects-page">
-        {/* Header */}
-        <div className="projects-header">
-          <div className="projects-breadcrumb">
-            <Link href="/projects">
-              <span className="material-icons" style={{ verticalAlign: 'middle', marginRight: '4px', fontSize: '20px' }}>arrow_back</span>
-              Projets
-            </Link>
-          </div>
-          <h1 className="projects-header-title">Mes Réalisations</h1>
-          <p className="projects-header-subtitle">
-            Découvre mon portfolio de projets et expériences professionnelles
-          </p>
-        </div>
-
-        {/* Main Content */}
-        <div className="projects-wrapper">
-          {/* Sidebar Filtres */}
-          <aside className="sidebar">
-            {/* Recherche */}
-            <div className="filter-section">
-              <h3 className="filter-title">
-                <span className="material-icons" style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '16px' }}>search</span>
-                Rechercher
-              </h3>
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Un projet, une techno..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-
-            {/* Catégories */}
-            <div className="filter-section">
-              <h3 className="filter-title">
-                <span className="material-icons" style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '16px' }}>folder</span>
-                Catégories
-              </h3>
-              <div className="checkbox-group">
-                {categories.map((category) => {
-                  const count = projects.filter(
-                    (p) => p.category === category
-                  ).length;
-                  return (
-                    <label key={category} className="checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category)}
-                        onChange={() => toggleCategory(category)}
-                      />
-                      <span className="checkbox-label">{category}</span>
-                      <span className="checkbox-count">{count}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Technologies */}
-            {allTechs.length > 0 && (
-              <div className="filter-section">
-                <h3 className="filter-title">
-                  <span className="material-icons" style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '16px' }}>tune</span>
-                  Technologies
-                </h3>
-                <div className="tech-tags">
-                  {allTechs.map((tech) => (
-                    <button
-                      key={tech}
-                      className={`tech-tag ${
-                        selectedTechs.includes(tech) ? 'active' : ''
-                      }`}
-                      onClick={() => toggleTech(tech)}
-                    >
-                      {tech}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Reset */}
-            {(searchTerm || selectedCategories.length > 0 || selectedTechs.length > 0) && (
-              <button className="reset-filters" onClick={resetFilters}>
-                Réinitialiser
-              </button>
-            )}
-          </aside>
-
-          {/* Projects Grid */}
-          <div className="projects-content">
-            {paginatedProjects.length === 0 ? (
-              <div className="projects-grid">
-                <div className="empty-state">
-                  <span className="material-icons" style={{ fontSize: '48px', color: '#4925B0' }}>search</span>
-                  <h2 className="empty-state-title">Aucun projet trouvé</h2>
-                  <p className="empty-state-text">
-                    Essaie avec des mots-clés ou filtres différents
-                  </p>
-                </div>
-              </div>
-            ) : (
+      <section className="project-detail-hero">
+        <div className="project-detail-container">
+          <Link href="/projects" className="back-link">
+            <span className="material-icons">arrow_back</span>
+            Retour aux projets
+          </Link>
+          <div className="breadcrumb">
+            <Link href="/projects">Projets</Link>
+            <span className="breadcrumb-sep">/</span>
+            {project.category && (
               <>
-                <div className="projects-grid">
-                  {paginatedProjects.map((project) => (
-                    <Link
-                      key={project.id}
-                      href={`/projects/${project.id}`}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <div className="project-card">
-                        <div className="project-image">
-                          {project.image_url ? (
-                            <>
-                              {(() => {
-                                const images = getProjectImages(project.image_url);
-                                const currentIdx = imageIndexes[project.id] || 0;
-                                const currentImage = images[currentIdx];
-                                
-                                return (
-                                  <div className="carousel-container">
-                                    <img 
-                                      src={currentImage} 
-                                      alt={`${project.title} - ${currentIdx + 1}`}
-                                      className="carousel-image"
-                                      onError={(e) => {
-                                        e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="%23f0f0f0" width="400" height="300"/></svg>';
-                                      }}
-                                    />
-                                    
-                                    {images.length > 1 && (
-                                      <>
-                                        <button 
-                                          className="carousel-nav prev"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            prevImage(project.id, images.length);
-                                          }}
-                                          title="Image précédente"
-                                        >
-                                          <span className="material-icons">chevron_left</span>
-                                        </button>
-                                        <button 
-                                          className="carousel-nav next"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            nextImage(project.id, images.length);
-                                          }}
-                                          title="Image suivante"
-                                        >
-                                          <span className="material-icons">chevron_right</span>
-                                        </button>
-                                        
-                                        <div className="carousel-dots">
-                                          {images.map((_, idx) => (
-                                            <button
-                                              key={idx}
-                                              className={`carousel-dot ${idx === currentIdx ? 'active' : ''}`}
-                                              onClick={(e) => {
-                                                e.preventDefault();
-                                                goToImage(project.id, idx, images.length);
-                                              }}
-                                              title={`Image ${idx + 1}`}
-                                            />
-                                          ))}
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                              
-                              {project.is_featured && (
-                                <div className="project-badge">
-                                  <span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle', marginRight: '4px' }}>star</span>
-                                  FEATURED
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="project-image-placeholder">
-                              <span className="material-icons" style={{ fontSize: '64px', color: 'white' }}>code</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="project-body">
-                          {project.category && (
-                            <div className="project-category">
-                              {project.category}
-                            </div>
-                          )}
-                          <h3 className="project-title">{project.title}</h3>
-                          <p className="project-description">
-                            {project.description}
-                          </p>
-
-                          {project.technologies.length > 0 && (
-                            <div className="project-techs">
-                              {project.technologies.slice(0, 2).map((tech) => (
-                                <span key={tech} className="tech-badge">
-                                  {tech}
-                                </span>
-                              ))}
-                              {project.technologies.length > 2 && (
-                                <span className="tech-badge">
-                                  +{project.technologies.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="project-footer">
-                          <button className="btn-details">
-                            <span className="material-icons" style={{ fontSize: '18px' }}>visibility</span>
-                            Voir les détails
-                          </button>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      ← Précédent
-                    </button>
-
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <button
-                          key={page}
-                          className={`pagination-btn ${
-                            currentPage === page ? 'active' : ''
-                          }`}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page}
-                        </button>
-                      )
-                    )}
-
-                    <button
-                      className="pagination-btn"
-                      onClick={() =>
-                        setCurrentPage(Math.min(totalPages, currentPage + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                    >
-                      Suivant →
-                    </button>
-                  </div>
-                )}
+                <span>{project.category}</span>
+                <span className="breadcrumb-sep">/</span>
               </>
             )}
+            <span>{project.title}</span>
+          </div>
+        </div>
+      </section>
 
-            {/* Similar Project Section */}
-            {featuredProjects.length > 0 && (
-              <div className="similar-section">
-                <h2 className="similar-title">Un projet similaire en tête ?</h2>
-                <p className="similar-subtitle">
-                  Découvre les réalisations mises en avant qui pourraient t'intéresser
-                </p>
-                <Link href={`/projects/${featuredProjects[0].id}`}>
-                  <button className="similar-btn">
-                    <span className="material-icons" style={{ fontSize: '18px' }}>star</span>
-                    Voir le projet
-                  </button>
-                </Link>
+      <div className="project-detail-container">
+        <div className="project-detail-grid">
+          <div className="project-images">
+            <div className="project-main-image">
+              {images.length > 0 && currentImage ? (
+                <div className="carousel-main-container">
+                  <img 
+                    src={currentImage} 
+                    alt={`${project.title} - ${currentImageIndex + 1}`}
+                    className="carousel-main-image"
+                    onError={(e) => {
+                      e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="%23f0f0f0" width="400" height="300"/></svg>';
+                    }}
+                  />
+                  
+                  {images.length > 1 && (
+                    <>
+                      <button 
+                        className="carousel-nav-main prev"
+                        onClick={handlePrevImage}
+                        title="Image précédente"
+                      >
+                        <span className="material-icons">chevron_left</span>
+                      </button>
+                      <button 
+                        className="carousel-nav-main next"
+                        onClick={handleNextImage}
+                        title="Image suivante"
+                      >
+                        <span className="material-icons">chevron_right</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(135deg, #4925B0 0%, #6a42d0 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                }}>
+                  <span className="material-icons" style={{ fontSize: '64px', color: 'white' }}>code</span>
+                </div>
+              )}
+            </div>
+
+            {images.length > 1 && (
+              <div className="project-thumbnails">
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`project-thumbnail ${idx === currentImageIndex ? 'active' : ''}`}
+                    onClick={() => handleThumbnailClick(idx)}
+                  >
+                    <img src={img} alt={`Thumbnail ${idx + 1}`} onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {project.is_featured && (
+              <div className="featured-badge">
+                <span className="material-icons">star</span>
+                Projet en vedette
               </div>
             )}
           </div>
+
+          <div className="project-info">
+            <div className="project-header">
+              {project.category && (
+                <div className="project-category-badge">{project.category}</div>
+              )}
+              <h1 className="project-detail-title">{project.title}</h1>
+              <p className="project-detail-description">{project.description}</p>
+            </div>
+
+            {project.technologies.length > 0 && (
+              <div className="project-meta">
+                <div className="meta-item">
+                  <div className="meta-label">
+                    <span className="material-icons" style={{ display: 'inline', marginRight: '4px', fontSize: '14px', verticalAlign: 'middle' }}>tune</span>
+                    Technologies
+                  </div>
+                  <div className="meta-value">
+                    {project.technologies.map((tech) => (
+                      <span key={tech} className="tech-badge-detail">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="project-links">
+              {project.demo_url && (
+                <a
+                  href={project.demo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-link btn-demo"
+                >
+                  <span className="material-icons">visibility</span>
+                  Voir le site
+                </a>
+              )}
+              {project.github_url && (
+                <a
+                  href={project.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-link btn-github"
+                >
+                  <span className="material-icons">code</span>
+                  Voir le code
+                </a>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Section Call-to-Action */}
+        <div style={{ marginTop: '80px', marginBottom: '80px' }}>
+          <div className="cta-section">
+            <h2 className="cta-title">Vous avez un projet similaire?</h2>
+            <p className="cta-text">
+              Parlons de votre projet! Je suis disponible pour discuter de vos besoins et vous proposer les meilleures solutions.
+            </p>
+            <a 
+              href="https://wa.me/2290196171313?text=Bonjour%20Thales%2C%20j'aime%20ton%20travail%20et%20j'aurai%20un%20projet%20pour%20toi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cta-button"
+            >
+              <span className="material-icons">chat</span>
+              Discutons sur WhatsApp
+            </a>
+          </div>
+        </div>
+
+      
+        {/* Projets connexes */}
+        {relatedProjects.length > 0 && (
+          <div className="related-section">
+            <h2 className="related-title">Projets similaires</h2>
+            <div className="related-grid">
+              {relatedProjects.map((related) => (
+                <Link
+                  key={related.id}
+                  href={`/projects/${related.id}`}
+                  className="related-card"
+                >
+                  <div className="related-image">
+                    {related.image_url ? (
+                      <img src={related.image_url.split('|')[0]} alt={related.title} />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(135deg, #4925B0 0%, #6a42d0 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                      }}>
+                        <span className="material-icons" style={{ fontSize: '32px', color: 'white' }}>code</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="related-content">
+                    <h3 className="related-name">{related.title}</h3>
+                    <p className="related-desc">{related.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
