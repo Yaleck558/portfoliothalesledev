@@ -130,7 +130,7 @@ function MotionCarousel(props: PropType) {
       </div>
 
       <div className="flex justify-between">
-        <Button size="icon" onClick={onPrev} disabled={prevDisabled}>
+        <Button onClick={onPrev} disabled={prevDisabled} className="p-2">
           <ChevronLeft className="size-5" />
         </Button>
 
@@ -145,7 +145,7 @@ function MotionCarousel(props: PropType) {
           ))}
         </div>
 
-        <Button size="icon" onClick={onNext} disabled={nextDisabled}>
+        <Button onClick={onNext} disabled={nextDisabled} className="p-2">
           <ChevronRight className="size-5" />
         </Button>
       </div>
