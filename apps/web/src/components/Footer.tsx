@@ -222,7 +222,7 @@ export default function Footer() {
 
           <div className="footer-follow">
             <h3 className="footer-col-title">Me suivre</h3>
-            <SocialContactsList variant="white" style={{ marginTop: 0 }} />
+            <SocialContactsList variant="light" style={{ marginTop: 0 }} />
           </div>
         </div>
 
