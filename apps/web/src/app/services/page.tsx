@@ -204,7 +204,7 @@ export default function ServicesPage() {
           font-family: 'Josefin Sans', sans-serif;
           font-size: 13px;
           font-weight: 700;
-          color: #e07a3f;
+          color: #4925B0;
           text-transform: uppercase;
         }
 

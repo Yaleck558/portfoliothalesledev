@@ -55,7 +55,7 @@ export default function Header() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Germania+One&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=folder_code,supervised_user_circle');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=folder_code,supervised_user_circle,work_history');
 
         .material-symbols-outlined {
           font-family: 'Material Symbols Outlined';
@@ -479,7 +479,7 @@ export default function Header() {
                   className={`nav-link ${isActive('/services') ? 'active' : ''} services-link`}
                   onClick={(e: React.MouseEvent) => handleNav(e, '/services')}
                 >
-                  <span className="nav-icon blog-icon material-symbols-outlined">supervised_user_circle</span>
+                  <span className="nav-icon blog-icon material-symbols-outlined">work_history</span>
                   <span>Services</span>
                 </PreviewLinkCardTrigger>
                 <PreviewLinkCardContent side="bottom" sideOffset={10}>
@@ -570,16 +570,16 @@ export default function Header() {
             </PreviewLinkCardContent>
           </PreviewLinkCard>
 
-          <PreviewLinkCard href="/blog">
+          <PreviewLinkCard href="/services">
             <PreviewLinkCardTrigger
-              className={`mobile-nav-btn ${isActive('/blog') ? 'active' : ''}`}
-              onClick={(e: React.MouseEvent) => handleNav(e, '/blog')}
+              className={`mobile-nav-btn ${isActive('/services') ? 'active' : ''}`}
+              onClick={(e: React.MouseEvent) => handleNav(e, '/services')}
             >
-              <span className="mobile-nav-icon blog-icon material-symbols-outlined">supervised_user_circle</span>
-              <span className="mobile-nav-label">Blog</span>
+              <span className="mobile-nav-icon blog-icon material-symbols-outlined">work_history</span>
+              <span className="mobile-nav-label">Services</span>
             </PreviewLinkCardTrigger>
             <PreviewLinkCardContent side="top" sideOffset={10}>
-              <PreviewLinkCardImage alt="Blog" />
+              <PreviewLinkCardImage alt="services" />
             </PreviewLinkCardContent>
           </PreviewLinkCard>
 
