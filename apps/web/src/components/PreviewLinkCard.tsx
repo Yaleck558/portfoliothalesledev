@@ -141,19 +141,21 @@ export function PreviewLinkCard({ href, children }: PreviewLinkCardProps) {
 
 /* ---------------- PreviewLinkCardTrigger ---------------- */
 
-interface PreviewLinkCardTriggerProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
+interface PreviewLinkCardTriggerProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'onMouseEnter' | 'onMouseLeave'> {
   children: ReactNode;
+  onMouseEnter?: (e: React.MouseEvent<HTMLElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 export function PreviewLinkCardTrigger({ children, style, onMouseEnter, onMouseLeave, ...props }: PreviewLinkCardTriggerProps) {
   const { href, hovered, setHovered, content, side, sideOffset, align, alignOffset } = useCtx();
   const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
- function handleEnter(e: React.MouseEvent<HTMLElement>) {
-  if (closeTimeout.current) clearTimeout(closeTimeout.current);
-  setHovered(true);
-  onMouseEnter?.(e);
-}
+  function handleEnter(e: React.MouseEvent<HTMLElement>) {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    setHovered(true);
+    onMouseEnter?.(e);
+  }
 
   function handleLeave(e: React.MouseEvent<HTMLElement>) {
     closeTimeout.current = setTimeout(() => setHovered(false), 120);
