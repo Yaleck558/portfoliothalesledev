@@ -149,13 +149,13 @@ export function PreviewLinkCardTrigger({ children, style, onMouseEnter, onMouseL
   const { href, hovered, setHovered, content, side, sideOffset, align, alignOffset } = useCtx();
   const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function handleEnter(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (closeTimeout.current) clearTimeout(closeTimeout.current);
-    setHovered(true);
-    onMouseEnter?.(e);
-  }
+ function handleEnter(e: React.MouseEvent<HTMLElement>) {
+  if (closeTimeout.current) clearTimeout(closeTimeout.current);
+  setHovered(true);
+  onMouseEnter?.(e);
+}
 
-  function handleLeave(e: React.MouseEvent<HTMLAnchorElement>) {
+  function handleLeave(e: React.MouseEvent<HTMLElement>) {
     closeTimeout.current = setTimeout(() => setHovered(false), 120);
     onMouseLeave?.(e);
   }
