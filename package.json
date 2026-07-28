@@ -1,16 +1,14 @@
 {
   "name": "portfolio-monorepo",
   "version": "1.0.0",
-  "description": "Portfolio personnel avec CMS - Architecture monorepo",
   "private": true,
-  "packageManager": "pnpm@8.0.0",
+  "workspaces": [
+    "apps/web"
+  ],
   "scripts": {
-    "dev": "turbo run dev --parallel",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
