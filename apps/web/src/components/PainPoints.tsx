@@ -27,6 +27,55 @@ const SOLUTIONS = [
   'Budget respecté du début à la fin',
 ];
 
+/* === Mini illustration "chaos", intégrée dans le slide "Sans moi" === */
+function ChaosMini() {
+  return (
+    <div className="pp-mini pp-mini-chaos" aria-hidden="true">
+      <div className="pp-chaos-item pp-chaos-1" style={{ ['--rot' as any]: '-14deg' }}>
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div className="pp-chaos-item pp-chaos-2" style={{ ['--rot' as any]: '10deg' }}>
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 3L22 20H2L12 3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M12 10V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="12" cy="17" r="0.8" fill="currentColor" />
+        </svg>
+      </div>
+      <div className="pp-chaos-item pp-chaos-3" style={{ ['--rot' as any]: '-6deg' }}>
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+          <path d="M12 7V12L15 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div className="pp-chaos-crack" />
+    </div>
+  );
+}
+
+/* === Mini illustration "calme", intégrée dans le slide "Avec moi" === */
+function CalmMini() {
+  return (
+    <div className="pp-mini pp-mini-calm" aria-hidden="true">
+      <div className="pp-calm-glow" />
+      <div className="pp-calm-row">
+        <div className="pp-calm-item" style={{ animationDelay: '0s' }}>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div className="pp-calm-item" style={{ animationDelay: '0.15s' }}>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
+      <div className="pp-calm-line" />
+    </div>
+  );
+}
+
 export default function PainPoints() {
   const sliderRef = useRef<HTMLDivElement>(null);
   const isPressed = useRef(false);
@@ -138,6 +187,7 @@ export default function PainPoints() {
           to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Slide en 2 colonnes internes : texte à gauche, illustration à droite */
         .pp-slide {
           position: absolute;
           top: 0;
@@ -145,15 +195,39 @@ export default function PainPoints() {
           width: 100%;
           height: 100%;
           display: flex;
-          flex-direction: column;
-          justify-content: center;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
           padding: 50px 60px;
           overflow: hidden;
         }
 
+        .pp-slide-text {
+          flex: 1 1 auto;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+
+        .pp-slide-illustration {
+          flex: 0 0 150px;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
         @media (max-width: 768px) {
           .pp-slider { height: 420px; }
-          .pp-slide { padding: 35px 32px; }
+          .pp-slide { padding: 35px 32px; gap: 12px; }
+          .pp-slide-illustration { flex-basis: 100px; }
+        }
+
+        @media (max-width: 640px) {
+          .pp-slide-illustration { display: none; }
         }
 
         @media (max-width: 480px) {
@@ -404,6 +478,115 @@ export default function PainPoints() {
           .pp-bottom-text { font-size: 10px; }
           .pp-bottom-arrow { width: 28px; height: 28px; }
         }
+
+        /* ============================================= */
+        /* === MINI ILLUSTRATIONS (pur CSS/SVG) === */
+        /* ============================================= */
+        .pp-mini {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* ---------- Mini scène chaos ("Sans moi") ---------- */
+        .pp-chaos-item {
+          position: absolute;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #c8434c;
+          box-shadow: 0 8px 18px rgba(200, 67, 76, 0.22);
+          border: 1.5px solid rgba(200, 67, 76, 0.25);
+          transform: rotate(var(--rot));
+          animation: ppJitter 0.6s ease-in-out infinite;
+        }
+
+        .pp-chaos-item svg { width: 20px; height: 20px; }
+
+        .pp-chaos-1 { top: 18%; left: 20%; animation-delay: 0s; }
+        .pp-chaos-2 { top: 12%; right: 12%; animation-delay: 0.12s; }
+        .pp-chaos-3 { bottom: 16%; left: 6%; animation-delay: 0.24s; }
+
+        @keyframes ppJitter {
+          0%, 100% { transform: rotate(var(--rot)) translate(0, 0); }
+          25% { transform: rotate(calc(var(--rot) - 4deg)) translate(-3px, 2px); }
+          50% { transform: rotate(calc(var(--rot) + 3deg)) translate(2px, -3px); }
+          75% { transform: rotate(calc(var(--rot) - 2deg)) translate(-2px, -1px); }
+        }
+
+        .pp-chaos-crack {
+          position: absolute;
+          bottom: 30%;
+          width: 80%;
+          height: 1px;
+          background: repeating-linear-gradient(
+            90deg,
+            rgba(200, 67, 76, 0.35) 0 8px,
+            transparent 8px 14px
+          );
+          transform: rotate(-4deg);
+        }
+
+        /* ---------- Mini scène calme ("Avec moi") ---------- */
+        .pp-calm-glow {
+          position: absolute;
+          width: 130px;
+          height: 130px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 70%);
+          animation: ppGlowPulse 3.5s ease-in-out infinite;
+        }
+
+        @keyframes ppGlowPulse {
+          0%, 100% { transform: scale(1); opacity: 0.7; }
+          50% { transform: scale(1.12); opacity: 1; }
+        }
+
+        .pp-calm-row {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          z-index: 2;
+        }
+
+        .pp-calm-item {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #4925B0;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+          animation: ppCalmFloat 3.2s ease-in-out infinite;
+        }
+
+        .pp-calm-item svg { width: 20px; height: 20px; }
+
+        @keyframes ppCalmFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+
+        .pp-calm-line {
+          position: absolute;
+          left: 22%;
+          top: 50%;
+          width: 2px;
+          height: 60%;
+          transform: translateY(-50%);
+          background: rgba(255, 255, 255, 0.25);
+          z-index: 1;
+        }
       `}</style>
 
       <section className="pp-section" id="painpoints">
@@ -421,22 +604,27 @@ export default function PainPoints() {
           >
             {/* SLIDE PROBLEM (FOND) */}
             <div className="pp-slide pp-slide-problem">
-              <div className="pp-slide-header">
-                <div className="pp-slide-name">Sans moi</div>
-                <span className="pp-slide-badge">Problème</span>
+              <div className="pp-slide-text">
+                <div className="pp-slide-header">
+                  <div className="pp-slide-name">Sans moi</div>
+                  <span className="pp-slide-badge">Problème</span>
+                </div>
+                <ul className="pp-list">
+                  {PROBLEMS.map((item) => (
+                    <li className="pp-list-item" key={item}>
+                      <span className="pp-list-icon">
+                        <AnimateIcon animateOnHover>
+                          <X size={20} />
+                        </AnimateIcon>
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="pp-list">
-                {PROBLEMS.map((item) => (
-                  <li className="pp-list-item" key={item}>
-                    <span className="pp-list-icon">
-                      <AnimateIcon animateOnHover>
-                        <X size={20} />
-                      </AnimateIcon>
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="pp-slide-illustration">
+                <ChaosMini />
+              </div>
             </div>
 
             {/* SLIDE SOLUTION (RÉVÉLÉE PAR LA BARRE) */}
@@ -446,22 +634,27 @@ export default function PainPoints() {
                 clipPath: `polygon(${sliderPosition}% 0%, 100% 0%, 100% 100%, ${sliderPosition}% 100%)`,
               }}
             >
-              <div className="pp-slide-header">
-                <div className="pp-slide-name">Avec moi</div>
-                <span className="pp-slide-badge">Solution</span>
+              <div className="pp-slide-text">
+                <div className="pp-slide-header">
+                  <div className="pp-slide-name">Avec moi</div>
+                  <span className="pp-slide-badge">Solution</span>
+                </div>
+                <ul className="pp-list">
+                  {SOLUTIONS.map((item) => (
+                    <li className="pp-list-item" key={item}>
+                      <span className="pp-list-icon">
+                        <AnimateIcon animateOnHover>
+                          <CircleCheckBig size={20} />
+                        </AnimateIcon>
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="pp-list">
-                {SOLUTIONS.map((item) => (
-                  <li className="pp-list-item" key={item}>
-                    <span className="pp-list-icon">
-                      <AnimateIcon animateOnHover>
-                        <CircleCheckBig size={20} />
-                      </AnimateIcon>
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="pp-slide-illustration">
+                <CalmMini />
+              </div>
             </div>
 
             {/* HANDLE (cercle + barre, un seul bloc synchronisé) */}

@@ -474,16 +474,16 @@ export default function Header() {
                 </PreviewLinkCardContent>
               </PreviewLinkCard>
 
-              <PreviewLinkCard href="/blog">
+              <PreviewLinkCard href="/services">
                 <PreviewLinkCardTrigger
-                  className={`nav-link ${isActive('/blog') ? 'active' : ''} blog-link`}
-                  onClick={(e: React.MouseEvent) => handleNav(e, '/blog')}
+                  className={`nav-link ${isActive('/services') ? 'active' : ''} services-link`}
+                  onClick={(e: React.MouseEvent) => handleNav(e, '/services')}
                 >
                   <span className="nav-icon blog-icon material-symbols-outlined">supervised_user_circle</span>
-                  <span>Blog</span>
+                  <span>Services</span>
                 </PreviewLinkCardTrigger>
                 <PreviewLinkCardContent side="bottom" sideOffset={10}>
-                  <PreviewLinkCardImage alt="Blog" />
+                  <PreviewLinkCardImage alt="Services" />
                 </PreviewLinkCardContent>
               </PreviewLinkCard>
             </div>
